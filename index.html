@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.8.0/leaflet.css"
+    />
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.8.0/leaflet.js"></script>
+
+    <script>
+      let tiles = new L.tileLayer(
+        "https://maps-{s}.onemap.sg/v3/Default/{z}/{x}/{y}.png",
+        {
+          detectRetina: true,
+          maxZoom: 18,
+          minZoom: 11,
+          //Do not remove this attribution
+          attribution:
+            '<img src="https://docs.onemap.sg/maps/images/oneMap64-01.png" style="height:20px;width:20px;">' +
+            'New OneMap | Map data © contributors, <a href="http://SLA.gov.sg">Singapore Land Authority</a>',
+        }
+      );
+      let map = new L.Map("map", {
+        center: [1.3572404225154122, 103.81328296345293],
+        zoom: 11,
+        maxBounds: L.latLngBounds(L.latLng(1.1, 103.5), L.latLng(1.5, 104.3)),
+      }).addLayer(tiles);
+
+      fetch("https://api.data.gov.sg/v1/environment/psi")
+        .then((res) => res.json())
+        .then((data) => {
+          console.log(data);
+          var psi = {
+            west: data.items[0].readings.psi_twenty_four_hourly.west,
+            national: data.items[0].readings.psi_twenty_four_hourly.national,
+            east: data.items[0].readings.psi_twenty_four_hourly.east,
+            central: data.items[0].readings.psi_twenty_four_hourly.central,
+            south: data.items[0].readings.psi_twenty_four_hourly.south,
+            north: data.items[0].readings.psi_twenty_four_hourly.north,
+          };
+
+          data.region_metadata.forEach((element) => {
+            let text = psi[element.name];
+            // color gradient by a percentage value.
+            let color = (perc) => {
+              
+              var r,
+                g,
+                b = 0;
+              if (perc < 50) {
+                g = 255;
+                r = Math.round(5.1 * perc);
+              } else {
+                r = 255;
+                g =  Math.round(510 - 5.1 * perc);
+               
+              }
+              var h = r * 0x10000 + g * 0x100 + b * 0x1;
+              return "#" + ("000000" + h.toString(16)).slice(-6);
+            };
+
+            // normalise color
+            let normCol = (psi, val) => {
+              let objValues = Object.values(psi)
+              let psiMax = Math.max(...objValues)
+
+              console.log(val/psiMax*100)
+              return val/psiMax*100;
+            }
+            L.circle(
+              [
+                element.label_location.latitude,
+                element.label_location.longitude,
+              ],
+              { radius: 5000, color: color(normCol(psi, text)) }
+            )
+              .bindTooltip(text.toString(), {
+                permanent: true,
+                direction: "center",
+                opacity: 1,
+                offset: [0, 0],
+                className: "tooltip",
+              })
+              .addTo(map);
+          });
+        });
+    </script>
+  </body>
+</html>
+
+<style>
+  #map {
+    width: 1000px;
+    height: 600px;
+  }
+
+  .tooltip {
+    color: black;
+    font-weight: 500;
+    font-size: large;
+    border-color: transparent;
+    box-shadow: none;
+    background-color: transparent;
+    border: 0px;
+  }
+</style>
