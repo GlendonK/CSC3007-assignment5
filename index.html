@@ -13,23 +13,25 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.8.0/leaflet.js"></script>
 
     <script>
-      let tiles = new L.tileLayer(
-        "https://maps-{s}.onemap.sg/v3/Default/{z}/{x}/{y}.png",
-        {
-          detectRetina: true,
-          maxZoom: 18,
-          minZoom: 11,
-          //Do not remove this attribution
-          attribution:
-            '<img src="https://docs.onemap.sg/maps/images/oneMap64-01.png" style="height:20px;width:20px;">' +
-            'New OneMap | Map data © contributors, <a href="http://SLA.gov.sg">Singapore Land Authority</a>',
-        }
-      );
+      let tiles = L.tileLayer('https://maps-{s}.onemap.sg/v3/Default/{z}/{x}/{y}.png', {
+            detectRetina: true,
+            maxZoom: 18,
+            minZoom: 11,
+            //Do not remove this attribution
+            attribution: '<img src="https://www.onemap.gov.sg/docs/maps/images/oneMap64-01.png" style="height:20px;width:20px;"/> OneMap | Map data &copy; contributors, <a href="http://SLA.gov.sg">Singapore Land Authority</a>'
+          });
       let map = new L.Map("map", {
-        center: [1.3572404225154122, 103.81328296345293],
+        center: [1.3605987422333263, 103.86276922856644],
         zoom: 11,
         maxBounds: L.latLngBounds(L.latLng(1.1, 103.5), L.latLng(1.5, 104.3)),
-      }).addLayer(tiles);
+      });
+      
+      tiles.addTo(map);
+      
+      // to make map centered correctly on render. 
+      window.dispatchEvent(new Event('resize'));
+
+      
 
       fetch("https://api.data.gov.sg/v1/environment/psi")
         .then((res) => res.json())
@@ -68,9 +70,11 @@
             let normCol = (psi, val) => {
               let objValues = Object.values(psi)
               let psiMax = Math.max(...objValues)
+              let psiMin = Math.min(...objValues)
 
-              console.log(val/psiMax*100)
-              return val/psiMax*100;
+              console.log((val)/psiMax*100)
+
+              return (val)/psiMax*100;
             }
             L.circle(
               [
@@ -95,6 +99,7 @@
 
 <style>
   #map {
+    position: absolute;
     width: 1000px;
     height: 600px;
   }
